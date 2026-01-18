@@ -1,19 +1,22 @@
 import base64
+import dataclasses
 import http.client
 import json
 import re
 import sys
-from dataclasses import dataclass
-from difflib import SequenceMatcher
 
 
-@dataclass
-class SpotifyTrack:
+@dataclasses.dataclass
+class SpotifyTrack(dict):
     id: str
     name: str
     artists: list[str]
     duration: float
     album: str
+
+    def __post_init__(self):
+           self.update(self.__dict__)
+
 
 
 class SpotifyPlaylistReader:
@@ -57,12 +60,6 @@ class SpotifyPlaylistReader:
 
 
     @staticmethod
-    def get_string_similarity(a: str, b: str) -> float:
-        seq = SequenceMatcher(lambda s: s==' ', a, b)
-        return seq.ratio()
-
-
-    @staticmethod
     def _get_playlist_id(playlist_url: str) -> str:
         _, _, playlist_id = playlist_url.rpartition('playlist/')
         return playlist_id
@@ -85,7 +82,7 @@ class SpotifyPlaylistReader:
             raise RuntimeError(f"Playlist ID {playlist_id} did not return a valid payload.")
 
 
-    def extract_playlist_tracks(self, playlist_data: dict) -> list:
+    def extract_playlist_tracks(self, playlist_data: dict) -> dict[str, list[SpotifyTrack]]:
         playlist_items = (playlist_data
                            ['entities']
                            ['items']
@@ -106,10 +103,10 @@ class SpotifyPlaylistReader:
         if self.verbose:
             self.printerr(f"Playlist {playlist_data['id']} tracks = "
                           f"{json.dumps(playlist_tracks, indent=4)}")
-        return playlist_tracks
+        return {playlist_data['id']: playlist_tracks}
 
 
-    def get_tracks_from_playlist(self, playlist: str) -> list:
+    def get_tracks_from_playlist(self, playlist: str) -> dict[str, list[SpotifyTrack]]:
         playlist_id = self._get_playlist_id(playlist)
         playlist_data = self.get_playlist_data(playlist_id)
         playlist_tracks = self.extract_playlist_tracks(playlist_data)

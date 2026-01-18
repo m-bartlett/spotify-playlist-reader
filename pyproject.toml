@@ -1,11 +1,9 @@
 [project]
-name = "spotify-playlist-download"
+name = "spotify-playlist-reader"
 authors = [
     {name = "MB"},
 ]
-description = """
-    Download Spotify songs from given playlists searched on Soundcloud or Youtube using ytdlp.
-"""
+description = "Fetch the track info for any public Spotify playlist"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -17,26 +15,25 @@ dynamic = [
     "version",
     "dependencies"
 ]
-urls = [
-    {Homepage = "https://github.com/m-bartlett/spotify-playlist-reader"},
-    {Issues = "https://github.com/m-bartlett/spotify-playlist-reader/issues"}
-]
 
-scripts = [
-    {spot-playlist-dl = "spotify_playlist_download.__main__:main"}
-]
+[project.urls]
+Homepage = "https://github.com/m-bartlett/spotify-playlist-reader"
+Issues = "https://github.com/m-bartlett/spotify-playlist-reader/issues"
+
+[project.scripts]
+spotify-playlist-read = "spotify_playlist_reader.__main__:main"
 
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
-version = {attr = "spotify_playlist_download.__version__"}
+version = {attr = "spotify_playlist_reader.__version__"}
 
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-package-dir = {"spotify_playlist_download" = "src"}
+package-dir = {"spotify_playlist_reader" = "src"}
 
 [tool.ty.environment]
 root = ["."]

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import argparse
+import json
 
-from .spotify_playlist_reader import SpotifyPlaylistReader
+from . import __version__
+from .spotify_playlist_reader import SpotifyPlaylistReader, SpotifyTrack
 
 
 def main() -> None:
@@ -12,30 +14,36 @@ def main() -> None:
                         nargs='+',
                         help="playlists to download.")
 
-    parser.add_argument('--output', '-o', default='.', help="Path to output downloaded files")
-
-    parser.add_argument('--search', '-s',
-                        metavar='SEARCHPREFIX',
-                        nargs='+',
-                        default=['ytsearch1'],
-                        help="""yt-dlp search prefixes to try to source tracks from. Stops searching
-                                on the first match. More info:
-                                https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md""")
-
-    parser.add_argument('--receipt',
-                        metavar="/path/to/receipt.json",
-                        help="Output data of the songs that were downloaded to the given path.")
+    parser.add_argument('--format', '-f',
+                        type=str,
+                        help=f"""
+                            String template whose template arguments should correspond to track
+                            attributes, which are:
+                            {', '.join(SpotifyTrack.__dataclass_fields__.keys())}
+                        """)
 
     parser.add_argument('--verbose', action="store_true")
+    parser.add_argument('--versions', action="version", version=__version__)
 
     args = parser.parse_args()
 
     spotpldl = SpotifyPlaylistReader(verbose=args.verbose)
-    for playlist in args.playlists:
-        playlist_tracks = spotpldl.get_tracks_from_playlist(playlist)
-        spotpldl.download_tracks(playlist_tracks,
-                                 output_dir=args.output,
-                                 search_prefixes=args.search)
+
+    playlists_info = {
+        # [track.__dict__ for track in spotpldl.get_tracks_from_playlist(playlist)]
+        playlist_id: playlist_tracks
+        for playlist in args.playlists
+        for playlist_id, playlist_tracks in spotpldl.get_tracks_from_playlist(playlist).items()
+    }
+
+    if args.format:
+        for playlist, playlist_tracks in playlists_info.items():
+            for track in playlist_tracks:
+                _track = track.__dict__
+                _track['artists'] = ' & '.join(track.artists)
+                print(args.format.format_map(_track))
+    else:
+        print(json.dumps(playlists_info, indent=4))
 
 
 if __name__ == '__main__':
